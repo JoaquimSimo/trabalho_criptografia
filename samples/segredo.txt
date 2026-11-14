@@ -1,0 +1,1 @@
+Texto de exemplo para testar a ocultacao e extracao no Steghide.

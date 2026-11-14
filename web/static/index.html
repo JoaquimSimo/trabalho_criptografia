@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steghide GUI - Esteganografia</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Esteganografia em Imagens e Audio (Steghide)</h1>
+      <p class="subtitle">Suporte a arquivos BMP, PNG, WAV e AU com preservacao estatistica de 1a ordem</p>
+    </div>
+    <span class="status-info" id="engineStatus">Conectando...</span>
+  </header>
+
+  <main class="container">
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="embed">Ocultar (embed)</button>
+      <button class="tab-btn" data-tab="extract">Extrair (extract)</button>
+      <button class="tab-btn" data-tab="info">Informacoes do arquivo (info)</button>
+      <button class="tab-btn" data-tab="multi">Multiplas mensagens</button>
+      <button class="tab-btn" data-tab="spread">Dividir em varios arquivos</button>
+    </nav>
+
+    <section class="tab-panel active" id="tab-embed">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Arquivo de cobertura e mensagem</h2>
+          <div class="field">
+            <label>Arquivo de cobertura (.bmp, .png, .wav, .au)</label>
+            <input type="file" id="embedCoverFile" accept=".bmp,.png,.wav,.au" />
+            <div class="quick-samples">
+              <span>Carregar teste:</span>
+              <button type="button" class="chip" data-sample="cover_gradient.bmp" data-target="embedCover">BMP</button>
+              <button type="button" class="chip" data-sample="cover_wave.png" data-target="embedCover">PNG</button>
+              <button type="button" class="chip" data-sample="cover_tone.wav" data-target="embedCover">WAV</button>
+              <button type="button" class="chip" data-sample="cover_mulaw.au" data-target="embedCover">AU</button>
+            </div>
+            <small id="embedCoverLabel" class="muted">Nenhum arquivo selecionado</small>
+          </div>
+
+          <div class="field">
+            <label>O que deseja ocultar?</label>
+            <select id="embedSecretMode">
+              <option value="text">Texto digitado</option>
+              <option value="file">Arquivo do computador</option>
+            </select>
+          </div>
+
+          <div class="field" id="embedTextGroup">
+            <label>Texto secreto</label>
+            <textarea id="embedSecretText" rows="4" placeholder="Digite a mensagem que sera ocultada...">Mensagem secreta de exemplo.</textarea>
+            <input type="text" id="embedTextFilename" value="mensagem.txt" placeholder="Nome do arquivo (ex: mensagem.txt)" />
+          </div>
+
+          <div class="field hidden" id="embedFileGroup">
+            <label>Selecionar arquivo para ocultar</label>
+            <input type="file" id="embedSecretFile" />
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Opcoes de criptografia e ocultacao</h2>
+          <div class="checkbox-row">
+            <label><input type="checkbox" id="embedUsePassword" checked /> Proteger com senha</label>
+          </div>
+
+          <div class="field" id="embedPassGroup">
+            <label>Senha (passphrase)</label>
+            <input type="password" id="embedPassphrase" value="" placeholder="Digite a senha..." />
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label>Criptografia (-e)</label>
+              <select id="embedAlgo">
+                <option value="rijndael-128">rijndael-128 (AES-128 padrao)</option>
+                <option value="aes-256">aes-256</option>
+                <option value="chacha20">chacha20</option>
+                <option value="none">none (sem criptografia)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Modo</label>
+              <select id="embedMode">
+                <option value="cbc">cbc</option>
+                <option value="ctr">ctr</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label>Metodo de insercao</label>
+              <select id="embedEncoding">
+                <option value="graph">Troca de pares em grafo (Steghide)</option>
+                <option value="matrix">Matrix encoding (Hamming)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Nivel de compressao zlib (0 a 9)</label>
+              <input type="number" id="embedCompress" min="0" max="9" value="9" />
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <label><input type="checkbox" id="embedChecksum" checked /> Incluir CRC32</label>
+            <label><input type="checkbox" id="embedFilenameFlag" checked /> Salvar nome original do arquivo</label>
+          </div>
+
+          <button type="button" class="btn-primary" id="btnRunEmbed">Ocultar dados</button>
+        </div>
+      </div>
+
+      <div class="card result-card hidden" id="embedResultCard"></div>
+    </section>
+
+    <section class="tab-panel" id="tab-extract">
+      <div class="card">
+        <h2>Extrair arquivo oculto</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label>Arquivo com dados ocultos (stego)</label>
+            <input type="file" id="extractStegoFile" accept=".bmp,.png,.wav,.au" />
+            <small id="extractStegoLabel" class="muted">Nenhum arquivo selecionado</small>
+          </div>
+          <div>
+            <div class="checkbox-row">
+              <label><input type="checkbox" id="extractUsePassword" checked /> Arquivo protegido com senha</label>
+            </div>
+            <div class="field" id="extractPassGroup">
+              <label>Senha (passphrase)</label>
+              <input type="password" id="extractPassphrase" value="" placeholder="Digite a senha usada na ocultacao..." />
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-primary" id="btnRunExtract">Extrair dados</button>
+      </div>
+      <div class="card result-card hidden" id="extractResultCard"></div>
+    </section>
+
+    <section class="tab-panel" id="tab-info">
+      <div class="card">
+        <h2>Inspecionar arquivo (steghide info)</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label>Arquivo (.bmp, .png, .wav, .au)</label>
+            <input type="file" id="infoFile" accept=".bmp,.png,.wav,.au" />
+            <div class="quick-samples">
+              <span>Carregar teste:</span>
+              <button type="button" class="chip" data-sample="cover_gradient.bmp" data-target="infoFile">BMP</button>
+              <button type="button" class="chip" data-sample="cover_wave.png" data-target="infoFile">PNG</button>
+              <button type="button" class="chip" data-sample="cover_tone.wav" data-target="infoFile">WAV</button>
+              <button type="button" class="chip" data-sample="cover_mulaw.au" data-target="infoFile">AU</button>
+            </div>
+            <small id="infoFileLabel" class="muted">Nenhum arquivo selecionado</small>
+          </div>
+          <div class="field">
+            <label>Senha (opcional, caso queira ver os dados embutidos)</label>
+            <input type="password" id="infoPassphrase" placeholder="Em branco mostra apenas a capacidade do arquivo" />
+          </div>
+        </div>
+        <button type="button" class="btn-primary" id="btnRunInfo">Ver informacoes</button>
+      </div>
+      <div class="card result-card hidden" id="infoResultCard"></div>
+    </section>
+
+    <section class="tab-panel" id="tab-multi">
+      <div class="card">
+        <h2>Ocultar duas mensagens no mesmo arquivo (senhas diferentes)</h2>
+        <p class="muted">Grava duas mensagens em regioes separadas do mesmo arquivo. Na extracao, cada senha abre apenas a sua propria mensagem.</p>
+        <div class="field">
+          <label>Arquivo de cobertura</label>
+          <input type="file" id="multiCoverFile" accept=".bmp,.png,.wav,.au" />
+          <div class="quick-samples">
+            <span>Carregar teste:</span>
+            <button type="button" class="chip" data-sample="cover_gradient.bmp" data-target="multiCover">BMP</button>
+            <button type="button" class="chip" data-sample="cover_wave.png" data-target="multiCover">PNG</button>
+          </div>
+          <small id="multiCoverLabel" class="muted">Nenhum arquivo selecionado</small>
+        </div>
+
+        <div class="grid-2">
+          <div class="subcard">
+            <h3>Mensagem 1</h3>
+            <div class="field">
+              <label>Senha 1</label>
+              <input type="password" id="multiPass1" value="senha1" />
+            </div>
+            <div class="field">
+              <label>Nome do arquivo 1</label>
+              <input type="text" id="multiName1" value="anotacoes.txt" />
+            </div>
+            <div class="field">
+              <label>Texto 1</label>
+              <textarea id="multiText1" rows="3">Primeira mensagem salva no arquivo.</textarea>
+            </div>
+          </div>
+
+          <div class="subcard">
+            <h3>Mensagem 2</h3>
+            <div class="field">
+              <label>Senha 2</label>
+              <input type="password" id="multiPass2" value="senha2" />
+            </div>
+            <div class="field">
+              <label>Nome do arquivo 2</label>
+              <input type="text" id="multiName2" value="confidencial.txt" />
+            </div>
+            <div class="field">
+              <label>Texto 2</label>
+              <textarea id="multiText2" rows="3">Segunda mensagem independente no mesmo portador.</textarea>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-primary" id="btnRunMulti">Gerar arquivo com as duas mensagens</button>
+      </div>
+      <div class="card result-card hidden" id="multiResultCard"></div>
+    </section>
+
+    <section class="tab-panel" id="tab-spread">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Dividir segredo em varios arquivos</h2>
+          <p class="muted">Reparte os dados secretos entre 2 ou mais arquivos de cobertura.</p>
+          <div class="field">
+            <label>Arquivos de cobertura (selecione varios)</label>
+            <input type="file" id="spreadCoverFiles" multiple accept=".bmp,.png,.wav,.au" />
+            <div class="quick-samples">
+              <button type="button" class="chip" id="btnLoadSpreadSamples">Usar 3 arquivos de teste</button>
+            </div>
+            <small id="spreadCoversLabel" class="muted">Nenhum arquivo carregado</small>
+          </div>
+          <div class="field">
+            <label>Senha</label>
+            <input type="password" id="spreadPassphrase" value="senha123" />
+          </div>
+          <div class="field">
+            <label>Texto para dividir</label>
+            <textarea id="spreadSecretText" rows="3">Texto dividido entre varios arquivos portadores para teste de reconstrucao.</textarea>
+          </div>
+          <button type="button" class="btn-primary" id="btnRunSpread">Dividir e ocultar</button>
+          <div class="result-card hidden" id="spreadResultCard"></div>
+        </div>
+
+        <div class="card">
+          <h2>Juntar partes e extrair</h2>
+          <p class="muted">Selecione todos os arquivos gerados na divisao e informe a senha para remontar o arquivo original.</p>
+          <div class="field">
+            <label>Arquivos com as partes</label>
+            <input type="file" id="gatherStegoFiles" multiple accept=".bmp,.png,.wav,.au" />
+            <small id="gatherFilesLabel" class="muted">Nenhum arquivo selecionado</small>
+          </div>
+          <div class="field">
+            <label>Senha</label>
+            <input type="password" id="gatherPassphrase" value="senha123" />
+          </div>
+          <button type="button" class="btn-primary" id="btnRunGather">Juntar e extrair</button>
+          <div class="result-card hidden" id="gatherResultCard"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
